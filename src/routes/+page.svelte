@@ -2,9 +2,31 @@
 	import { onMount } from 'svelte';
 	import Authbar from '../components/Auth.svelte';
 	import { pb, user } from '../lib/pocketbase';
+	import { writable } from 'svelte/store';
 
 	let recents: any[] = [];
 	let xrciseTypes: any[] = [];
+
+	let submitxrciseType: string;
+	let submitxrciseTime: string;
+	let submitxrciseRepeats: string;
+	let submitxrciseSets: string;
+
+	let submitxrciseName: string;
+
+	async function addxrciseentry() {
+		try {
+			const data = {
+				type: submitxrciseType,
+				time: submitxrciseTime,
+				repeats: submitxrciseRepeats,
+				sets: submitxrciseSets
+			};
+			const newxrciseentry = await pb.collection('xrciseEntries').create(data);
+		} catch (error) {
+			console.log(error);
+		}
+	}
 
 	onMount(async () => {
 		const reqXrciseLast20 = await pb.collection('xrciseEntries').getList(1, 20, {
@@ -14,12 +36,46 @@
 		recents = reqXrciseLast20.items;
 		const reqXrciseTypes = await pb.collection('xrciseTypes').getList(1, 50);
 		xrciseTypes = reqXrciseTypes.items;
-		console.log(xrciseTypes);
 	});
 </script>
 
 <Authbar />
 <main>
+	{#if $user?.xrcisePriviledge}
+		<div class="addentry">
+			<h4>add an XRCISE entry</h4>
+			<label for="submitxrcisetype">type of xrcise</label>
+			<select id="submitxrcisetype" bind:value={submitxrciseType}>
+				<option value="" />
+				{#each xrciseTypes as type (type.id)}
+					<option value={type.id}>{type.name}</option>
+				{/each}
+			</select>
+
+			{#if submitxrciseType}
+				{#if xrciseTypes.filter((el) => {
+					return el.id == submitxrciseType;
+				})[0].timeBased}
+					<p>
+						<label for="submitxrcisetime">seconds</label>
+						<input type="number" id="submitxrcisetime" bind:value={submitxrciseTime} />
+					</p>
+				{:else if xrciseTypes.filter((el) => {
+					return el.id == submitxrciseType;
+				})[0].repeatBased}
+					<p>
+						<label for="submitxrciserepeats">repetitions</label>
+						<input type="number" id="submitxrciserepeats" bind:value={submitxrciseRepeats} />
+					</p>
+				{/if}
+				<p>
+					<label for="submitxrcisesets">sets:</label>
+					<input type="number" id="submitxrcisesets" bind:value={submitxrciseSets} />
+				</p>
+				<button on:click={addxrciseentry}>add entry</button>
+			{/if}
+		</div>
+	{/if}
 	<article>
 		Recent exercises:
 		{#each recents as recent (recent.id)}
@@ -42,5 +98,9 @@
 		text-align: center;
 		font-family: 'Lexend', sans-serif;
 		font-weight: 300;
+	}
+	.addentry {
+		background: #eee;
+		padding: 8px;
 	}
 </style>
