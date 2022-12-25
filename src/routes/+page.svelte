@@ -1,17 +1,40 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Authbar from '../components/Auth.svelte';
 	import { pb, user } from '../lib/pocketbase';
+
+	let recents: any[] = [];
+	let xrciseTypes: any[] = [];
+
+	onMount(async () => {
+		const reqXrciseLast20 = await pb.collection('xrciseEntries').getList(1, 20, {
+			sort: 'created',
+			expand: 'type'
+		});
+		recents = reqXrciseLast20.items;
+		const reqXrciseTypes = await pb.collection('xrciseTypes').getList(1, 50);
+		xrciseTypes = reqXrciseTypes.items;
+		console.log(xrciseTypes);
+	});
 </script>
 
 <Authbar />
 <main>
-	{#if $user}
-		{$user.xrcisePriviledge
-			? "You're allowed to add XRCISE records."
-			: "Well, you're not allowed to add records, and I have to hold my ground... We can still have fun looking at charts, though!"}
-	{:else}
-		Please verify your identity by logging in above.
-	{/if}
+	<article>
+		Recent exercises:
+		{#each recents as recent (recent.id)}
+			<div class="recentXRCISE">
+				{#if recent.expand?.type?.timeBased}
+					{recent.time} seconds of {recent.expand?.type?.name}
+					{recent.sets ? `(${recent.sets} sets)` : ''}
+				{:else if recent.expand?.type?.repeatBased}
+					{recent.repeats}
+					{recent.expand?.type?.name}
+					{recent.sets ? `(${recent.sets} sets)` : ''}
+				{/if}
+			</div>
+		{/each}
+	</article>
 </main>
 
 <style>
