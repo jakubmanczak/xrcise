@@ -1,1 +1,6 @@
 This is a project to document and graph instances of my exercises, with an additional deployed backend based on pocketbase.
+
+-----------------------
+* made with Svelte and SvelteKit
+* "npm run dev" to run a dev server
+* "npm run build" to build the project
