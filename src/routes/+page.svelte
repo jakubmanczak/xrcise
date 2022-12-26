@@ -37,7 +37,7 @@
 
 	onMount(async () => {
 		const reqXrciseLast20 = await pb.collection('xrciseEntries').getList(1, 20, {
-			sort: 'created',
+			sort: '-created',
 			expand: 'type'
 		});
 		recents = reqXrciseLast20.items;
@@ -48,7 +48,7 @@
 				if (action === 'create') {
 					const type = await pb.collection('xrciseTypes').getOne(record.type);
 					record.expand = { type };
-					recents = [...recents, record];
+					recents = [record, ...recents];
 				}
 				if (action === 'delete') {
 					recents = recents.filter((el) => {
