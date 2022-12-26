@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import Authbar from '../components/Auth.svelte';
 	import { pb, user } from '../lib/pocketbase';
-	import { writable } from 'svelte/store';
 
 	let recents: any[] = [];
 	let xrciseTypes: any[] = [];
@@ -12,14 +11,22 @@
 	let submitxrciseRepeats: string;
 	let submitxrciseSets: string;
 
-	let submitxrciseName: string;
+	let unsubscribe: () => void;
 
 	async function addxrciseentry() {
 		try {
 			const data = {
 				type: submitxrciseType,
-				time: submitxrciseTime,
-				repeats: submitxrciseRepeats,
+				time: xrciseTypes.filter((el) => {
+					return el.id == submitxrciseType;
+				})[0].timeBased
+					? submitxrciseTime
+					: null,
+				repeats: xrciseTypes.filter((el) => {
+					return el.id == submitxrciseType;
+				})[0].repeatBased
+					? submitxrciseRepeats
+					: null,
 				sets: submitxrciseSets
 			};
 			const newxrciseentry = await pb.collection('xrciseEntries').create(data);
@@ -34,8 +41,28 @@
 			expand: 'type'
 		});
 		recents = reqXrciseLast20.items;
+
+		unsubscribe = await pb
+			.collection('xrciseEntries')
+			.subscribe('*', async ({ action, record }) => {
+				if (action === 'create') {
+					const type = await pb.collection('xrciseTypes').getOne(record.type);
+					record.expand = { type };
+					recents = [...recents, record];
+				}
+				if (action === 'delete') {
+					recents = recents.filter((el) => {
+						return el.id !== record.id;
+					});
+				}
+			});
+
 		const reqXrciseTypes = await pb.collection('xrciseTypes').getList(1, 50);
 		xrciseTypes = reqXrciseTypes.items;
+	});
+
+	onDestroy(() => {
+		unsubscribe?.();
 	});
 </script>
 
