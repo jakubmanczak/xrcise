@@ -13,6 +13,21 @@
 
 	let unsubscribe: () => void;
 
+	let months = [
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December'
+	];
+
 	async function addxrciseentry() {
 		try {
 			const data = {
@@ -115,6 +130,11 @@
 					{recent.expand?.type?.name}
 					{recent.sets ? `(${recent.sets} sets)` : ''}
 				{/if}
+				<span style="color: #888">
+					{`on the ${new Date(recent.created).getDate()}th of ${
+						months[new Date(recent.created).getMonth()]
+					}, ${new Date(recent.created).getFullYear()}`}
+				</span>
 			</div>
 		{/each}
 	</article>
